@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Predict - Mobile Addiction Risk Assessment{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Additional styles for loading overlay - doesn't affect existing styles */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    flex-direction: column;
+}
+.loading-overlay.active {
+    display: flex;
+}
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+.loading-text {
+    color: white;
+    font-size: 1rem;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Live Insights Styles */
+.live-insights {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border-left: 4px solid #667eea;
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.risk-meter {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+.risk-meter-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+.risk-low { background: linear-gradient(90deg, #48bb78, #38a169); }
+.risk-medium { background: linear-gradient(90deg, #ed8936, #dd6b20); }
+.risk-high { background: linear-gradient(90deg, #f56565, #e53e3e); }
+.insight-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 8px;
+}
+.badge-high { background: #f56565; color: white; }
+.badge-moderate { background: #ed8936; color: white; }
+.badge-low { background: #48bb78; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay for data storage -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Saving your data to dashboard...</div>
+</div>
+
+<section class="predict-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-gradient-primary text-white text-center py-4">
+                        <h2 class="h3 mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Mobile Phone Addiction Risk Assessment
+                        </h2>
+                        <p class="small mt-2 mb-0 opacity-75">
+                            Fill in your daily usage patterns for accurate prediction
+                        </p>
+                    </div>
+                    <div class="card-body p-4 p-lg-5">
+                        {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {{ error }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endif %}
+                        
+                        <form method="POST" action="{{ url_for('predict') }}" id="predictionForm">
+                            <div class="row">
+                                <!-- Age -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="age" class="form-label fw-semibold">
+                                        <i class="fas fa-calendar-alt text-primary me-1"></i> Age
+                                    </label>
+                                    <input type="number" class="form-control" id="age" name="age" 
+                                           placeholder="Enter your age" min="10" max="80" step="1" required>
+                                    <div class="form-text">Age between 10-80 years</div>
+                                </div>
+                                
+                                <!-- Gender -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label fw-semibold">
+                                        <i class="fas fa-venus-mars text-primary me-1"></i> Gender
+                                    </label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="" disabled selected>Select gender</option>
+                                        <option value="0">Female</option>
+                                        <option value="1">Male</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Screen Time -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="screen_time" class="form-label fw-semibold">
+                                        <i class="fas fa-mobile-alt text-primary me-1"></i> Daily Screen Time (hours)
+                                    </label>
+                                    <input type="number" class="form-control" id="screen_time" name="screen_time" 
+                                           placeholder="e.g., 6.5" step="0.1" min="0" max="24" required>
+                                    <div class="form-text">Hours spent on phone daily (0-24)</div>
+                                </div>
+                                
+                                <!-- Social Media Hours -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="social_media" class="form-label fw-semibold">
+                                        <i class="fab fa-instagram text-primary me-1"></i> Social Media Hours
+                                    </label>
+                                    <input type="number" class="form-control" id="social_media" name="social_media" 
+                                           placeholder="e.g., 3.2" step="0.1" min="0" max="24" required>
+                                    <div class="form-text">Time spent on social media apps daily</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Gaming Hours -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="gaming_hours" class="form-label fw-semibold">
+                                        <i class="fas fa-gamepad text-primary me-1"></i> Gaming Hours
+                                    </label>
+                                    <input type="number" class="form-control" id="gaming_hours" name="gaming_hours" 
+                                           placeholder="e.g., 2.0" step="0.1" min="0" max="24" required>
+                                    <div class="form-text">Time spent on mobile games daily</div>
+                                </div>
+                                
+                                <!-- Sleep Hours -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="sleep_hours" class="form-label fw-semibold">
+                                        <i class="fas fa-moon text-primary me-1"></i> Sleep Hours
+                                    </label>
+                                    <input type="number" class="form-control" id="sleep_hours" name="sleep_hours" 
+                                           placeholder="e.g., 7.0" step="0.1" min="0" max="24" required>
+                                    <div class="form-text">Average sleep per night (0-24 hours)</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Stress Level -->
+                            <div class="mb-4">
+                                <label for="stress_level" class="form-label fw-semibold">
+                                    <i class="fas fa-heartbeat text-primary me-1"></i> Stress Level (1-10)
+                                </label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="small">Low Stress</span>
+                                    <input type="range" class="form-range flex-grow-1" id="stress_level" 
+                                           name="stress_level" min="1" max="10" step="1" value="5" required>
+                                    <span class="small">High Stress</span>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <span id="stressValue" class="badge bg-primary">5</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="predictBtn">
+                                    <i class="fas fa-chart-line me-2"></i> Predict Addiction Risk
+                                </button>
+                                <button type="reset" class="btn btn-outline-secondary" id="resetBtn">
+                                    <i class="fas fa-undo me-2"></i> Reset Form
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Live Insights Section -->
+                        <div id="liveInsights" style="display: none;" class="live-insights">
+                            <h6 class="mb-3">
+                                <i class="fas fa-chart-line text-primary me-2"></i>
+                                Live Risk Analysis
+                            </h6>
+                            <div id="insightContent"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-card mt-4 p-3 bg-light rounded text-center">
+                    <i class="fas fa-shield-alt text-primary me-2"></i>
+                    <small class="text-secondary">Your data is processed securely and will be added to our dashboard to help improve predictions.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Original stress slider functionality
+    const stressSlider = document.getElementById('stress_level');
+    const stressValue = document.getElementById('stressValue');
+    
+    stressSlider.addEventListener('input', function() {
+        stressValue.textContent = this.value;
+        updateLiveInsights();
+    });
+    
+    // Function to calculate risk score
+    function calculateRiskScore() {
+        const age = parseFloat(document.getElementById('age').value) || 0;
+        const screenTime = parseFloat(document.getElementById('screen_time').value) || 0;
+        const socialMedia = parseFloat(document.getElementById('social_media').value) || 0;
+        const gaming = parseFloat(document.getElementById('gaming_hours').value) || 0;
+        const sleep = parseFloat(document.getElementById('sleep_hours').value) || 0;
+        const stress = parseFloat(document.getElementById('stress_level').value) || 5;
+        
+        let riskScore = 0;
+        
+        if (screenTime > 6) riskScore += 30;
+        else if (screenTime > 4) riskScore += 15;
+        
+        if (socialMedia > 4) riskScore += 25;
+        else if (socialMedia > 2) riskScore += 12;
+        
+        if (gaming > 3) riskScore += 20;
+        else if (gaming > 1.5) riskScore += 10;
+        
+        if (sleep < 6) riskScore += 20;
+        else if (sleep < 7) riskScore += 10;
+        
+        if (stress > 7) riskScore += 15;
+        else if (stress > 5) riskScore += 8;
+        
+        if (age < 25 && age > 0) riskScore += 10;
+        
+        return Math.min(100, riskScore);
+    }
+    
+    // Function to get risk level
+    function getRiskLevel(score) {
+        if (score >= 60) return { level: 'High Risk', class: 'high', message: 'Your usage patterns indicate potential addiction.' };
+        if (score >= 30) return { level: 'Moderate Risk', class: 'moderate', message: 'Your usage is above average. Monitor your habits.' };
+        return { level: 'Low Risk', class: 'low', message: 'Your usage patterns appear healthy.' };
+    }
+    
+    // Update live insights
+    function updateLiveInsights() {
+        const age = parseFloat(document.getElementById('age').value);
+        const screenTime = parseFloat(document.getElementById('screen_time').value);
+        const socialMedia = parseFloat(document.getElementById('social_media').value);
+        const gaming = parseFloat(document.getElementById('gaming_hours').value);
+        const sleep = parseFloat(document.getElementById('sleep_hours').value);
+        const stress = parseFloat(document.getElementById('stress_level').value);
+        
+        const hasData = age > 0 || screenTime > 0 || socialMedia > 0 || gaming > 0 || sleep > 0;
+        
+        if (hasData) {
+            const riskScore = calculateRiskScore();
+            const riskInfo = getRiskLevel(riskScore);
+            
+            let insightsHtml = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Risk Score</strong>
+                        <span class="fw-bold">${riskScore}/100</span>
+                    </div>
+                    <div class="risk-meter">
+                        <div class="risk-meter-fill risk-${riskInfo.class}" style="width: ${riskScore}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <span class="insight-badge badge-${riskInfo.class}">${riskInfo.level}</span>
+                    <p class="mt-2 mb-0 small">${riskInfo.message}</p>
+                </div>
+                
+                <div class="row small">
+                    <div class="col-6 mb-2">
+                        <i class="fas fa-mobile-alt text-primary me-1"></i>
+                        Screen: <strong>${screenTime || 0}h</strong>
+                        ${screenTime > 6 ? '<span class="text-danger">⚠️ High</span>' : screenTime > 4 ? '<span class="text-warning">⚠️ Moderate</span>' : ''}
+                    </div>
+                    <div class="col-6 mb-2">
+                        <i class="fas fa-moon text-primary me-1"></i>
+                        Sleep: <strong>${sleep || 0}h</strong>
+                        ${sleep < 6 ? '<span class="text-danger">⚠️ Low</span>' : sleep < 7 ? '<span class="text-warning">⚠️ Borderline</span>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            insightContent.innerHTML = insightsHtml;
+            liveInsights.style.display = 'block';
+        } else {
+            liveInsights.style.display = 'none';
+        }
+    }
+    
+    // Function to save data to dashboard
+    async function saveToDashboard(userData) {
+        try {
+            const response = await fetch('/api/submit-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+            const result = await response.json();
+            console.log('✓ Data saved to dashboard:', result);
+            return result.success;
+        } catch (error) {
+            console.error('✗ Error saving to dashboard:', error);
+            return false;
+        }
+    }
+    
+    // Form submission handler
+    const originalForm = document.getElementById('predictionForm');
+    const predictBtn = document.getElementById('predictBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const liveInsights = document.getElementById('liveInsights');
+    const insightContent = document.getElementById('insightContent');
+    
+    originalForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(originalForm);
+        const userData = {
+            age: parseFloat(formData.get('age')),
+            gender: parseInt(formData.get('gender')),
+            screen_time_hours: parseFloat(formData.get('screen_time')),
+            social_media_hours: parseFloat(formData.get('social_media')),
+            gaming_hours: parseFloat(formData.get('gaming_hours')),
+            sleep_hours: parseFloat(formData.get('sleep_hours')),
+            stress_level: parseFloat(formData.get('stress_level'))
+        };
+        
+        // Validate social media + gaming <= screen time
+        if (userData.social_media_hours + userData.gaming_hours > userData.screen_time_hours + 0.5) {
+            alert('Social media and gaming hours cannot exceed total screen time!');
+            return;
+        }
+        
+        // Calculate risk score and determine addiction risk
+        const riskScore = calculateRiskScore();
+        const addictionRisk = riskScore >= 50 ? 1 : 0;
+        userData.addiction_risk = addictionRisk;
+        
+        // Show loading overlay
+        loadingOverlay.classList.add('active');
+        predictBtn.disabled = true;
+        
+        try {
+            // Save to dashboard
+            await saveToDashboard(userData);
+            
+            // Submit the form normally
+            originalForm.submit();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+            loadingOverlay.classList.remove('active');
+            predictBtn.disabled = false;
+        }
+    });
+    
+    // Reset button handler
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            setTimeout(() => {
+                updateLiveInsights();
+            }, 100);
+        });
+    }
+    
+    // Add event listeners for live insights
+    const inputFields = ['age', 'screen_time', 'social_media', 'gaming_hours', 'sleep_hours'];
+    inputFields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            element.addEventListener('input', updateLiveInsights);
+        }
+    });
+    document.getElementById('gender').addEventListener('change', updateLiveInsights);
+    
+    // Initial insights update
+    setTimeout(updateLiveInsights, 100);
+</script>
+{% endblock %}

@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Result - Mobile Addiction Risk{% endblock %}
+
+{% block extra_css %}
+<style>
+.risk-badge {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: transform 0.3s ease;
+}
+.risk-badge:hover {
+    transform: scale(1.05);
+}
+.risk-high {
+    background: linear-gradient(135deg, rgba(245, 101, 101, 0.2) 0%, rgba(229, 62, 62, 0.2) 100%);
+    border: 3px solid #dc3545;
+    color: #dc3545;
+}
+.risk-low {
+    background: linear-gradient(135deg, rgba(72, 187, 120, 0.2) 0%, rgba(56, 161, 105, 0.2) 100%);
+    border: 3px solid #28a745;
+    color: #28a745;
+}
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.recommendations {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    padding: 20px;
+}
+.recommendations ul li {
+    margin-bottom: 12px;
+    padding: 8px;
+    background: white;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+.recommendations ul li:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.bg-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+.bg-gradient-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+.probability-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.share-btn {
+    transition: all 0.3s ease;
+}
+.share-btn:hover {
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="result-section py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header {% if result.risk == 1 %}bg-gradient-danger{% else %}bg-gradient-success{% endif %} text-white text-center py-4">
+                        <h2 class="h3 mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Your Addiction Risk Assessment
+                        </h2>
+                    </div>
+                    <div class="card-body p-4 p-lg-5">
+                        <!-- Risk Level Display -->
+                        <div class="text-center mb-4">
+                            <div class="risk-badge {% if result.risk == 1 %}risk-high{% else %}risk-low{% endif %} p-4 rounded-circle mx-auto mb-3">
+                                <i class="fas {% if result.risk == 1 %}fa-exclamation-triangle fa-4x{% else %}fa-smile fa-4x{% endif %}"></i>
+                            </div>
+                            <h1 class="display-5 fw-bold {% if result.risk == 1 %}text-danger{% else %}text-success{% endif %}">
+                                {{ result.risk_level }}
+                            </h1>
+                            <p class="lead text-secondary mt-3">
+                                {% if result.risk == 1 %}
+                                Your usage patterns indicate potential mobile phone addiction.
+                                {% else %}
+                                Your usage patterns show healthy mobile phone habits.
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <!-- Probability Meters -->
+                        <div class="probability-section mb-4">
+                            <h5 class="fw-semibold mb-3">
+                                <i class="fas fa-chart-line text-primary me-2"></i>
+                                Risk Probability Analysis
+                            </h5>
+                            <div class="probability-card">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span><i class="fas fa-check-circle text-success me-1"></i> Low Risk Probability</span>
+                                    <span class="fw-bold">{{ "%.1f"|format(result.probability_low * 100) }}%</span>
+                                </div>
+                                <div class="progress" style="height: 30px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ result.probability_low * 100 }}%; font-weight: bold;" 
+                                         aria-valuenow="{{ result.probability_low * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ "%.1f"|format(result.probability_low * 100) }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="probability-card">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span><i class="fas fa-exclamation-triangle text-danger me-1"></i> High Risk Probability</span>
+                                    <span class="fw-bold">{{ "%.1f"|format(result.probability_high * 100) }}%</span>
+                                </div>
+                                <div class="progress" style="height: 30px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ result.probability_high * 100 }}%; font-weight: bold;" 
+                                         aria-valuenow="{{ result.probability_high * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ "%.1f"|format(result.probability_high * 100) }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Input Summary -->
+                        <div class="input-summary bg-light p-4 rounded mb-4">
+                            <h5 class="fw-semibold mb-3">
+                                <i class="fas fa-chart-simple me-2 text-primary"></i>
+                                Your Input Summary
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-calendar-alt text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Age</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.age }} years</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-venus-mars text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Gender</div>
+                                        <div class="fw-bold fs-5">{{ "Male" if result.input_data.gender == 1 else "Female" }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-mobile-alt text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Screen Time</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.screen_time_hours }} hrs/day</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fab fa-instagram text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Social Media</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.social_media_hours }} hrs/day</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-gamepad text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Gaming</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.gaming_hours }} hrs/day</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-moon text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Sleep</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.sleep_hours }} hrs/day</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-heartbeat text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Stress Level</div>
+                                        <div class="fw-bold fs-5">{{ result.input_data.stress_level }}/10</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="metric-card">
+                                        <i class="fas fa-chart-line text-primary fa-lg mb-2"></i>
+                                        <div class="small text-secondary">Risk Score</div>
+                                        <div class="fw-bold fs-5">{{ "%.1f"|format(result.probability_high * 100) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendations -->
+                        <div class="recommendations mb-4">
+                            <h5 class="fw-semibold mb-3">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                Personalized Recommendations
+                            </h5>
+                            {% if result.risk == 1 %}
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Set Screen Time Limits:</strong> Use built-in phone features to limit daily usage to 4-5 hours
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Digital Detox:</strong> Practice no-phone time for 1-2 hours before sleep
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Physical Activities:</strong> Replace 30 minutes of phone time with exercise or outdoor activities
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>App Management:</strong> Use apps like Forest or Digital Wellbeing to track and limit usage
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Professional Help:</strong> Consider consulting a mental health professional if addiction persists
+                                </li>
+                            </ul>
+                            {% else %}
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Maintain Healthy Habits:</strong> Continue your balanced approach to phone usage
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Regular Monitoring:</strong> Check your screen time weekly to stay on track
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Encourage Others:</strong> Share your healthy habits with friends and family
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i> 
+                                    <strong>Stay Informed:</strong> Keep learning about digital wellness practices
+                                </li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Data Saved Message -->
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-database me-2"></i>
+                            <strong>Data Saved!</strong> Your prediction has been anonymously added to our dashboard. 
+                            <a href="{{ url_for('dashboard') }}" class="alert-link">View analytics dashboard →</a>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between gap-3 flex-wrap">
+                            <a href="{{ url_for('predict') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-redo me-2"></i> New Prediction
+                            </a>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-chart-pie me-2"></i> View Analytics Dashboard
+                            </a>
+                            <button class="btn btn-outline-secondary share-btn" onclick="shareResult()">
+                                <i class="fas fa-share-alt me-2"></i> Share Result
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Tips -->
+                <div class="card mt-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            Did You Know?
+                        </h6>
+                        <p class="small text-secondary mb-0">
+                            Studies show that reducing screen time by just 1 hour per day can improve sleep quality by 20% and reduce stress levels significantly. 
+                            Your data helps us understand addiction patterns better and improve predictions for everyone!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Share result function
+    function shareResult() {
+        const riskLevel = "{{ result.risk_level }}";
+        const riskPercentage = "{{ "%.1f"|format(result.probability_high * 100) }}";
+        const text = `My mobile addiction risk assessment: ${riskLevel} (${riskPercentage}% risk). Take the test at PhoneAddiction AI!`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Mobile Addiction Risk Assessment',
+                text: text,
+                url: window.location.href
+            }).catch(() => {
+                copyToClipboard(text);
+            });
+        } else {
+            copyToClipboard(text);
+        }
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Result copied to clipboard! Share it with your friends.');
+        }).catch(() => {
+            alert('Could not copy. You can manually share your result.');
+        });
+    }
+    
+    // Animate progress bars on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

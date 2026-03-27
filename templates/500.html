@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Server Error{% endblock %}
+
+{% block content %}
+<section class="error-section py-5">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="error-card p-5">
+                    <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                    <h1 class="display-1 fw-bold text-danger">500</h1>
+                    <h2 class="h3 mb-3">Internal Server Error</h2>
+                    <p class="text-secondary mb-4">
+                        Something went wrong on our end. Please try again later.
+                    </p>
+                    <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i> Return Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

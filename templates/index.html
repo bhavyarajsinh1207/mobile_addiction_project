@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Mobile Addiction Predictor{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <div class="hero-content">
+                    <h1 class="display-4 fw-bold text-gradient mb-4">
+                        Is Your Smartphone <br>Controlling Your Life?
+                    </h1>
+                    <p class="lead text-secondary mb-4">
+                        Discover your mobile phone addiction risk using our advanced AI-powered prediction tool. 
+                        Based on your digital habits and lifestyle patterns, we provide personalized insights 
+                        to help you maintain a healthy relationship with technology.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-microphone-alt me-2"></i> Check Your Risk
+                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="fas fa-chart-line me-2"></i> View Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image text-center">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1062/1062826.png" 
+                         alt="Mobile Phone Usage" 
+                         class="img-fluid floating"
+                         style="max-width: 80%;">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">How It Works</h2>
+            <p class="text-secondary">Simple three-step process to get your addiction risk assessment</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-edit fa-3x text-primary"></i>
+                    </div>
+                    <h4>1. Fill the Form</h4>
+                    <p class="text-secondary">Provide your daily phone usage patterns, sleep habits, and stress levels</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-brain fa-3x text-primary"></i>
+                    </div>
+                    <h4>2. AI Analysis</h4>
+                    <p class="text-secondary">Our Logistic Regression model analyzes your patterns against real data</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-chart-bar fa-3x text-primary"></i>
+                    </div>
+                    <h4>3. Get Results</h4>
+                    <p class="text-secondary">Receive personalized risk assessment and actionable insights</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Preview -->
+<section class="stats-preview py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold">500+</h3>
+                    <p class="text-secondary">Users Analyzed</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold">94%</h3>
+                    <p class="text-secondary">Accuracy Rate</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold">6.5h</h3>
+                    <p class="text-secondary">Avg Screen Time</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-moon fa-2x text-primary mb-2"></i>
+                    <h3 class="fw-bold">6.2h</h3>
+                    <p class="text-secondary">Avg Sleep</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

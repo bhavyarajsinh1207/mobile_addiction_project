@@ -1,0 +1,62 @@
+[
+  {
+    "age": 22,
+    "gender": 1,
+    "screen_time_hours": 7,
+    "social_media_hours": 2,
+    "gaming_hours": 2,
+    "sleep_hours": 7,
+    "stress_level": 5,
+    "addiction_risk": 1,
+    "submitted_at": "2026-03-27 12:19:51",
+    "id": 1
+  },
+  {
+    "age": 21,
+    "gender": 0,
+    "screen_time_hours": 7,
+    "social_media_hours": 5,
+    "gaming_hours": 0,
+    "sleep_hours": 7,
+    "stress_level": 5,
+    "addiction_risk": 1,
+    "submitted_at": "2026-03-27 12:26:05",
+    "id": 2
+  },
+  {
+    "age": 45,
+    "gender": 1,
+    "screen_time_hours": 5,
+    "social_media_hours": 2,
+    "gaming_hours": 0,
+    "sleep_hours": 8,
+    "stress_level": 5,
+    "addiction_risk": 0,
+    "submitted_at": "2026-03-27 12:27:12",
+    "id": 3
+  },
+  {
+    "age": 15,
+    "gender": 1,
+    "screen_time_hours": 5,
+    "social_media_hours": 0,
+    "gaming_hours": 4,
+    "sleep_hours": 8,
+    "stress_level": 5,
+    "addiction_risk": 0,
+    "submitted_at": "2026-03-27 12:30:16",
+    "id": 4
+  },
+  {
+    "age": 14,
+    "gender": 1,
+    "screen_time_hours": 6,
+    "social_media_hours": 0,
+    "gaming_hours": 2,
+    "sleep_hours": 6,
+    "stress_level": 5,
+    "addiction_risk": 0,
+    "submitted_at": "2026-03-27 12:38:34",
+    "id": 5
+  }
+]

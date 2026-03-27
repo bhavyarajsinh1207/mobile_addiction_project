@@ -1,0 +1,974 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Mobile Addiction Insights{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+    transition: transform 0.2s;
+}
+.chart-container:hover {
+    transform: translateY(-4px);
+}
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+.stat-card-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Data Analysis Section Styles */
+.analysis-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    transition: all 0.3s ease;
+}
+.analysis-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.1);
+}
+.analysis-header {
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.analysis-header h3 {
+    margin: 0;
+    color: #2d3748;
+}
+.analysis-header i {
+    color: #667eea;
+    margin-right: 10px;
+}
+.insight-box {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-left: 4px solid #667eea;
+}
+.insight-box h5 {
+    margin-bottom: 8px;
+    color: #2d3748;
+    font-weight: 600;
+}
+.insight-box p {
+    margin: 0;
+    color: #4a5568;
+}
+.risk-meter {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 12px 0;
+}
+.risk-meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+.risk-low { background: linear-gradient(90deg, #48bb78, #38a169); }
+.risk-medium { background: linear-gradient(90deg, #ed8936, #dd6b20); }
+.risk-high { background: linear-gradient(90deg, #f56565, #e53e3e); }
+.compare-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 4px;
+}
+.badge-success { background: #48bb78; color: white; }
+.badge-warning { background: #ed8936; color: white; }
+.badge-danger { background: #f56565; color: white; }
+.badge-info { background: #4299e1; color: white; }
+
+/* Predictions Table */
+.predictions-table {
+    max-height: 400px;
+    overflow-y: auto;
+}
+.predictions-table table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+.predictions-table th {
+    background: #f7fafc;
+    position: sticky;
+    top: 0;
+    padding: 12px;
+    font-weight: 600;
+}
+.predictions-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.refresh-btn {
+    transition: all 0.3s ease;
+}
+.refresh-btn:hover {
+    transform: rotate(180deg);
+}
+.trend-up { color: #f56565; }
+.trend-down { color: #48bb78; }
+.stat-trend {
+    font-size: 0.75rem;
+    margin-left: 5px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-gradient mb-3">
+                <i class="fas fa-chart-pie me-2"></i>
+                Analytics Dashboard
+            </h1>
+            <p class="lead text-secondary">
+                Real-time insights from user predictions | <span id="dataCount"></span> predictions analyzed
+            </p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-danger text-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ error }}
+        </div>
+        {% else %}
+        
+        <!-- Prediction Insights Section -->
+        <div class="analysis-card">
+            <div class="analysis-header">
+                <h3>
+                    <i class="fas fa-chart-line me-2"></i>
+                    Prediction Analytics
+                </h3>
+                <p class="text-muted mb-0">Analyzing patterns from user predictions</p>
+            </div>
+            
+            <div class="row">
+                <!-- Key Metrics Column -->
+                <div class="col-lg-5 mb-4">
+                    <div class="bg-light p-4 rounded" id="keyMetricsPanel">
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-simple text-primary"></i>
+                            Key Insights
+                        </h5>
+                        <div id="keyMetricsContent">
+                            <div class="text-center py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                <p class="mt-2">Loading insights...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Predictions Column -->
+                <div class="col-lg-7">
+                    <div class="bg-light p-4 rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history text-primary"></i>
+                                Recent Predictions
+                            </h5>
+                            <button class="btn btn-sm btn-outline-primary refresh-btn" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="predictions-table" id="predictionsList">
+                            <div class="text-center py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                <p class="mt-2">Loading predictions...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Stats with Real-time Updates -->
+        <div class="row g-4 mb-5" id="statsContainer">
+            <!-- Stats will be dynamically updated -->
+        </div>
+        
+        <!-- Charts Grid with All Charts -->
+        <div class="row">
+            <!-- Chart 1: Risk Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-pie text-primary me-2"></i>
+                        Addiction Risk Distribution
+                    </h4>
+                    <canvas id="riskChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 2: Screen Time Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>
+                        Screen Time Distribution
+                    </h4>
+                    <canvas id="screenTimeChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 3: Sleep vs Addiction -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        Sleep Hours vs Addiction Rate
+                    </h4>
+                    <canvas id="sleepChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 4: Social Media Usage Comparison -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fab fa-instagram text-primary me-2"></i>
+                        Social Media Usage by Risk Level
+                    </h4>
+                    <canvas id="socialChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 5: Gaming Usage Comparison -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-gamepad text-primary me-2"></i>
+                        Gaming Hours by Risk Level
+                    </h4>
+                    <canvas id="gamingChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 6: Gender Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-venus-mars text-primary me-2"></i>
+                        Gender Distribution
+                    </h4>
+                    <canvas id="genderChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 7: Age Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-area text-primary me-2"></i>
+                        Age Distribution
+                    </h4>
+                    <canvas id="ageChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 8: Stress Level Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-heartbeat text-primary me-2"></i>
+                        Stress Level Distribution
+                    </h4>
+                    <canvas id="stressChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 9: Screen Time vs Risk Level -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        Screen Time vs Risk Level
+                    </h4>
+                    <canvas id="screenVsRiskChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <!-- Chart 10: Social Media vs Gaming Correlation -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h4 class="mb-3">
+                        <i class="fas fa-chart-scatter text-primary me-2"></i>
+                        Social Media vs Gaming Hours
+                    </h4>
+                    <canvas id="correlationChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trend Analysis Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <h3>
+                            <i class="fas fa-chart-line me-2"></i>
+                            Trend Analysis
+                        </h3>
+                        <p class="text-muted mb-0">Risk trends over time</p>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="insight-box">
+                                <h5><i class="fas fa-calendar-week me-2"></i>Weekly Trend</h5>
+                                <div id="weeklyTrend"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="insight-box">
+                                <h5><i class="fas fa-chart-line me-2"></i>Risk Factor Analysis</h5>
+                                <div id="riskFactorAnalysis"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <small class="text-secondary">
+                <i class="fas fa-chart-simple me-1"></i>
+                Data updates in real-time | Total predictions: <span id="totalPredictions">0</span>
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+// Global chart instances
+let charts = {};
+
+// Function to calculate risk score
+function calculateRiskScore(userData) {
+    let riskScore = 0;
+    
+    if (userData.screen_time_hours > 6) riskScore += 30;
+    else if (userData.screen_time_hours > 4) riskScore += 15;
+    
+    if (userData.social_media_hours > 4) riskScore += 25;
+    else if (userData.social_media_hours > 2) riskScore += 12;
+    
+    if (userData.gaming_hours > 3) riskScore += 20;
+    else if (userData.gaming_hours > 1.5) riskScore += 10;
+    
+    if (userData.sleep_hours < 6) riskScore += 20;
+    else if (userData.sleep_hours < 7) riskScore += 10;
+    
+    if (userData.stress_level > 7) riskScore += 15;
+    else if (userData.stress_level > 5) riskScore += 8;
+    
+    if (userData.age < 25) riskScore += 10;
+    
+    return Math.min(100, riskScore);
+}
+
+// Function to load predictions
+async function loadPredictions() {
+    try {
+        const response = await fetch('/api/get-submissions');
+        const data = await response.json();
+        
+        const predictionsList = document.getElementById('predictionsList');
+        
+        if (data.success && data.submissions.length > 0) {
+            let html = `
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Screen Time</th>
+                            <th>Sleep</th>
+                            <th>Risk Level</th>
+                            <th>Predicted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.submissions.slice(-15).reverse().forEach((sub) => {
+                const riskLevel = sub.addiction_risk == 1 ? 
+                    '<span class="badge badge-danger">High Risk</span>' : 
+                    '<span class="badge badge-success">Low Risk</span>';
+                const gender = sub.gender == 1 ? 'Male' : 'Female';
+                
+                html += `
+                    <tr>
+                        <td>#${sub.id}</td>
+                        <td>${sub.age}</td>
+                        <td>${gender}</td>
+                        <td>${sub.screen_time_hours}h</td>
+                        <td>${sub.sleep_hours}h</td>
+                        <td>${riskLevel}</td>
+                        <td><small>${sub.submitted_at.split(' ')[0]}</small></td>
+                    </tr>
+                `;
+            });
+            
+            html += `</tbody></table>`;
+            predictionsList.innerHTML = html;
+            document.getElementById('totalPredictions').textContent = data.total;
+            
+            // Update key metrics
+            updateKeyMetrics(data.submissions);
+            updateWeeklyTrend(data.submissions);
+            updateRiskFactorAnalysis(data.submissions);
+            
+            // Return submissions for chart updates
+            return data.submissions;
+        } else {
+            predictionsList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No predictions yet. Be the first to predict!</p>
+                </div>
+            `;
+            document.getElementById('totalPredictions').textContent = '0';
+            document.getElementById('keyMetricsContent').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No data available yet</p>
+                </div>
+            `;
+            return [];
+        }
+    } catch (error) {
+        console.error('Error loading predictions:', error);
+        return [];
+    }
+}
+
+// Function to update key metrics
+function updateKeyMetrics(submissions) {
+    if (!submissions || submissions.length === 0) return;
+    
+    const total = submissions.length;
+    const highRisk = submissions.filter(s => s.addiction_risk === 1).length;
+    const lowRisk = total - highRisk;
+    const highRiskPercent = ((highRisk / total) * 100).toFixed(1);
+    
+    const avgScreenTime = (submissions.reduce((sum, s) => sum + s.screen_time_hours, 0) / total).toFixed(1);
+    const avgSleep = (submissions.reduce((sum, s) => sum + s.sleep_hours, 0) / total).toFixed(1);
+    const avgStress = (submissions.reduce((sum, s) => sum + s.stress_level, 0) / total).toFixed(1);
+    
+    let trendScreen = 'stable';
+    let trendSleep = 'stable';
+    let trendStress = 'stable';
+    
+    if (submissions.length >= 10) {
+        const recent5 = submissions.slice(-5);
+        const previous5 = submissions.slice(-10, -5);
+        
+        const recentAvgScreen = recent5.reduce((sum, s) => sum + s.screen_time_hours, 0) / 5;
+        const prevAvgScreen = previous5.reduce((sum, s) => sum + s.screen_time_hours, 0) / 5;
+        trendScreen = recentAvgScreen > prevAvgScreen ? 'up' : (recentAvgScreen < prevAvgScreen ? 'down' : 'stable');
+        
+        const recentAvgSleep = recent5.reduce((sum, s) => sum + s.sleep_hours, 0) / 5;
+        const prevAvgSleep = previous5.reduce((sum, s) => sum + s.sleep_hours, 0) / 5;
+        trendSleep = recentAvgSleep > prevAvgSleep ? 'up' : (recentAvgSleep < prevAvgSleep ? 'down' : 'stable');
+        
+        const recentAvgStress = recent5.reduce((sum, s) => sum + s.stress_level, 0) / 5;
+        const prevAvgStress = previous5.reduce((sum, s) => sum + s.stress_level, 0) / 5;
+        trendStress = recentAvgStress > prevAvgStress ? 'up' : (recentAvgStress < prevAvgStress ? 'down' : 'stable');
+    }
+    
+    const metricsHtml = `
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Risk Distribution</strong>
+                <span>${highRiskPercent}% High Risk</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-danger" style="width: ${highRiskPercent}%"></div>
+                <div class="progress-bar bg-success" style="width: ${100 - highRiskPercent}%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <small>Low Risk: ${lowRisk}</small>
+                <small>High Risk: ${highRisk}</small>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between">
+                <strong>Average Screen Time</strong>
+                <span>${avgScreenTime} hours/day 
+                    ${trendScreen === 'up' ? '<i class="fas fa-arrow-up trend-up"></i>' : 
+                      trendScreen === 'down' ? '<i class="fas fa-arrow-down trend-down"></i>' : ''}
+                </span>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between">
+                <strong>Average Sleep</strong>
+                <span>${avgSleep} hours/night
+                    ${trendSleep === 'up' ? '<i class="fas fa-arrow-up trend-up"></i>' : 
+                      trendSleep === 'down' ? '<i class="fas fa-arrow-down trend-down"></i>' : ''}
+                </span>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between">
+                <strong>Average Stress Level</strong>
+                <span>${avgStress}/10
+                    ${trendStress === 'up' ? '<i class="fas fa-arrow-up trend-up"></i>' : 
+                      trendStress === 'down' ? '<i class="fas fa-arrow-down trend-down"></i>' : ''}
+                </span>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Based on ${total} prediction${total !== 1 ? 's' : ''}
+        </div>
+    `;
+    
+    document.getElementById('keyMetricsContent').innerHTML = metricsHtml;
+}
+
+// Function to update weekly trend
+function updateWeeklyTrend(submissions) {
+    if (!submissions || submissions.length === 0) {
+        document.getElementById('weeklyTrend').innerHTML = '<p class="text-muted">No data available</p>';
+        return;
+    }
+    
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayData = {};
+    
+    submissions.forEach(sub => {
+        const date = new Date(sub.submitted_at);
+        const dayName = days[date.getDay()];
+        if (!dayData[dayName]) {
+            dayData[dayName] = { total: 0, highRisk: 0 };
+        }
+        dayData[dayName].total++;
+        if (sub.addiction_risk === 1) dayData[dayName].highRisk++;
+    });
+    
+    let html = '<div class="row">';
+    days.forEach(day => {
+        const data = dayData[day] || { total: 0, highRisk: 0 };
+        const riskPercent = data.total > 0 ? ((data.highRisk / data.total) * 100).toFixed(0) : 0;
+        const barColor = riskPercent >= 60 ? 'danger' : (riskPercent >= 30 ? 'warning' : 'success');
+        
+        html += `
+            <div class="col-12 mb-2">
+                <div class="d-flex justify-content-between small">
+                    <span>${day}</span>
+                    <span>${data.total} pred</span>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-${barColor}" style="width: ${riskPercent}%"></div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    document.getElementById('weeklyTrend').innerHTML = html;
+}
+
+// Function to update risk factor analysis
+function updateRiskFactorAnalysis(submissions) {
+    if (!submissions || submissions.length === 0) {
+        document.getElementById('riskFactorAnalysis').innerHTML = '<p class="text-muted">No data available</p>';
+        return;
+    }
+    
+    const highRiskUsers = submissions.filter(s => s.addiction_risk === 1);
+    const lowRiskUsers = submissions.filter(s => s.addiction_risk === 0);
+    
+    const factors = [
+        { name: 'High Screen Time (>6h)', high: highRiskUsers.filter(u => u.screen_time_hours > 6).length / highRiskUsers.length * 100,
+          low: lowRiskUsers.filter(u => u.screen_time_hours > 6).length / lowRiskUsers.length * 100 },
+        { name: 'Poor Sleep (<6h)', high: highRiskUsers.filter(u => u.sleep_hours < 6).length / highRiskUsers.length * 100,
+          low: lowRiskUsers.filter(u => u.sleep_hours < 6).length / lowRiskUsers.length * 100 },
+        { name: 'High Stress (>7)', high: highRiskUsers.filter(u => u.stress_level > 7).length / highRiskUsers.length * 100,
+          low: lowRiskUsers.filter(u => u.stress_level > 7).length / lowRiskUsers.length * 100 },
+        { name: 'Excessive Social Media (>4h)', high: highRiskUsers.filter(u => u.social_media_hours > 4).length / highRiskUsers.length * 100,
+          low: lowRiskUsers.filter(u => u.social_media_hours > 4).length / lowRiskUsers.length * 100 }
+    ];
+    
+    let html = '';
+    factors.forEach(factor => {
+        const diff = (factor.high - factor.low).toFixed(0);
+        const impact = diff > 0 ? `+${diff}% higher in high-risk` : `${diff}% lower in high-risk`;
+        
+        html += `
+            <div class="mb-2">
+                <div class="d-flex justify-content-between small">
+                    <span>${factor.name}</span>
+                    <span>High: ${factor.high.toFixed(0)}% | Low: ${factor.low.toFixed(0)}%</span>
+                </div>
+                <div class="progress" style="height: 4px;">
+                    <div class="progress-bar bg-danger" style="width: ${factor.high}%"></div>
+                    <div class="progress-bar bg-success" style="width: ${factor.low}%"></div>
+                </div>
+                <small class="text-muted">${impact}</small>
+            </div>
+        `;
+    });
+    
+    document.getElementById('riskFactorAnalysis').innerHTML = html;
+}
+
+// Function to update all charts
+async function updateAllCharts() {
+    try {
+        const response = await fetch('/api/get-dashboard-data');
+        const data = await response.json();
+        
+        // Update stats
+        updateStats(data.stats);
+        document.getElementById('dataCount').innerHTML = `<strong>${data.stats.total_users}</strong>`;
+        
+        // Get submissions for detailed charts
+        const submissionsResponse = await fetch('/api/get-submissions');
+        const submissionsData = await submissionsResponse.json();
+        const submissions = submissionsData.submissions || [];
+        
+        // Update all charts
+        updateRiskChart(data.risk_distribution);
+        updateScreenTimeChart(data.screen_distribution);
+        updateSleepChart(data.sleep_vs_addiction);
+        updateSocialChart(data.social_by_risk);
+        updateGamingChart(data.gaming_by_risk);
+        updateGenderChart(data.gender_counts);
+        updateAgeChart(submissions);
+        updateStressChart(submissions);
+        updateScreenVsRiskChart(submissions);
+        updateCorrelationChart(submissions);
+        
+    } catch (error) {
+        console.error('Error updating charts:', error);
+    }
+}
+
+// Update individual charts
+function updateRiskChart(distribution) {
+    const canvas = document.getElementById('riskChart');
+    if (canvas) {
+        if (charts.risk) {
+            charts.risk.data.datasets[0].data = [distribution.low_risk, distribution.high_risk];
+            charts.risk.update();
+        } else {
+            charts.risk = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'High Risk'],
+                    datasets: [{ data: [distribution.low_risk, distribution.high_risk], backgroundColor: ['#28a745', '#dc3545'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+    }
+}
+
+function updateScreenTimeChart(distribution) {
+    const canvas = document.getElementById('screenTimeChart');
+    if (canvas) {
+        if (charts.screenTime) {
+            charts.screenTime.data.labels = Object.keys(distribution);
+            charts.screenTime.data.datasets[0].data = Object.values(distribution);
+            charts.screenTime.update();
+        } else {
+            charts.screenTime = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(distribution),
+                    datasets: [{ label: 'Number of Users', data: Object.values(distribution), backgroundColor: '#007bff', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+    }
+}
+
+function updateSleepChart(data) {
+    const canvas = document.getElementById('sleepChart');
+    if (canvas) {
+        if (charts.sleep) {
+            charts.sleep.data.labels = Object.keys(data);
+            charts.sleep.data.datasets[0].data = Object.values(data);
+            charts.sleep.update();
+        } else {
+            charts.sleep = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{ label: 'Addiction Rate', data: Object.values(data), borderColor: '#ffc107', backgroundColor: 'rgba(255, 193, 7, 0.1)', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { title: { display: true, text: 'Addiction Rate' }, min: 0, max: 1, ticks: { callback: v => (v * 100) + '%' } } } }
+            });
+        }
+    }
+}
+
+function updateSocialChart(data) {
+    const canvas = document.getElementById('socialChart');
+    if (canvas) {
+        if (charts.social) {
+            charts.social.data.datasets[0].data = [data['0'] || 0, data['1'] || 0];
+            charts.social.update();
+        } else {
+            charts.social = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: ['Low Risk', 'High Risk'],
+                    datasets: [{ label: 'Average Social Media Hours', data: [data['0'] || 0, data['1'] || 0], backgroundColor: ['#28a745', '#dc3545'], borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours per Day' } } } }
+            });
+        }
+    }
+}
+
+function updateGamingChart(data) {
+    const canvas = document.getElementById('gamingChart');
+    if (canvas) {
+        if (charts.gaming) {
+            charts.gaming.data.datasets[0].data = [data['0'] || 0, data['1'] || 0];
+            charts.gaming.update();
+        } else {
+            charts.gaming = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: ['Low Risk', 'High Risk'],
+                    datasets: [{ label: 'Average Gaming Hours', data: [data['0'] || 0, data['1'] || 0], backgroundColor: ['#28a745', '#dc3545'], borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours per Day' } } } }
+            });
+        }
+    }
+}
+
+function updateGenderChart(data) {
+    const canvas = document.getElementById('genderChart');
+    if (canvas) {
+        if (charts.gender) {
+            charts.gender.data.datasets[0].data = [data['0'] || 0, data['1'] || 0];
+            charts.gender.update();
+        } else {
+            charts.gender = new Chart(canvas, {
+                type: 'pie',
+                data: {
+                    labels: ['Female', 'Male'],
+                    datasets: [{ data: [data['0'] || 0, data['1'] || 0], backgroundColor: ['#6f42c1', '#20c997'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+    }
+}
+
+function updateAgeChart(submissions) {
+    const canvas = document.getElementById('ageChart');
+    if (canvas && submissions.length > 0) {
+        const ageGroups = {
+            '10-20': 0, '21-30': 0, '31-40': 0, '41-50': 0, '51+': 0
+        };
+        
+        submissions.forEach(sub => {
+            if (sub.age <= 20) ageGroups['10-20']++;
+            else if (sub.age <= 30) ageGroups['21-30']++;
+            else if (sub.age <= 40) ageGroups['31-40']++;
+            else if (sub.age <= 50) ageGroups['41-50']++;
+            else ageGroups['51+']++;
+        });
+        
+        if (charts.age) {
+            charts.age.data.datasets[0].data = Object.values(ageGroups);
+            charts.age.update();
+        } else {
+            charts.age = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(ageGroups),
+                    datasets: [{ label: 'Number of Users', data: Object.values(ageGroups), backgroundColor: '#17a2b8', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+    }
+}
+
+function updateStressChart(submissions) {
+    const canvas = document.getElementById('stressChart');
+    if (canvas && submissions.length > 0) {
+        const stressLevels = {};
+        for (let i = 1; i <= 10; i++) stressLevels[i] = 0;
+        
+        submissions.forEach(sub => {
+            stressLevels[sub.stress_level]++;
+        });
+        
+        if (charts.stress) {
+            charts.stress.data.datasets[0].data = Object.values(stressLevels);
+            charts.stress.update();
+        } else {
+            charts.stress = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(stressLevels),
+                    datasets: [{ label: 'Number of Users', data: Object.values(stressLevels), borderColor: '#fd7e14', backgroundColor: 'rgba(253, 126, 20, 0.1)', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of Users' } }, x: { title: { display: true, text: 'Stress Level' } } } }
+            });
+        }
+    }
+}
+
+function updateScreenVsRiskChart(submissions) {
+    const canvas = document.getElementById('screenVsRiskChart');
+    if (canvas && submissions.length > 0) {
+        const lowRiskData = submissions.filter(s => s.addiction_risk === 0).map(s => s.screen_time_hours);
+        const highRiskData = submissions.filter(s => s.addiction_risk === 1).map(s => s.screen_time_hours);
+        
+        const screenGroups = ['0-2h', '2-4h', '4-6h', '6-8h', '8-10h', '10h+'];
+        const lowRiskCounts = [0, 0, 0, 0, 0, 0];
+        const highRiskCounts = [0, 0, 0, 0, 0, 0];
+        
+        submissions.forEach(sub => {
+            let index = 0;
+            if (sub.screen_time_hours <= 2) index = 0;
+            else if (sub.screen_time_hours <= 4) index = 1;
+            else if (sub.screen_time_hours <= 6) index = 2;
+            else if (sub.screen_time_hours <= 8) index = 3;
+            else if (sub.screen_time_hours <= 10) index = 4;
+            else index = 5;
+            
+            if (sub.addiction_risk === 0) lowRiskCounts[index]++;
+            else highRiskCounts[index]++;
+        });
+        
+        if (charts.screenVsRisk) {
+            charts.screenVsRisk.data.datasets[0].data = lowRiskCounts;
+            charts.screenVsRisk.data.datasets[1].data = highRiskCounts;
+            charts.screenVsRisk.update();
+        } else {
+            charts.screenVsRisk = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: screenGroups,
+                    datasets: [
+                        { label: 'Low Risk', data: lowRiskCounts, backgroundColor: '#28a745', borderRadius: 8 },
+                        { label: 'High Risk', data: highRiskCounts, backgroundColor: '#dc3545', borderRadius: 8 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Number of Users' } }, x: { title: { display: true, text: 'Screen Time' } } } }
+            });
+        }
+    }
+}
+
+function updateCorrelationChart(submissions) {
+    const canvas = document.getElementById('correlationChart');
+    if (canvas && submissions.length > 0) {
+        const lowRiskPoints = submissions.filter(s => s.addiction_risk === 0).map(s => ({ x: s.social_media_hours, y: s.gaming_hours }));
+        const highRiskPoints = submissions.filter(s => s.addiction_risk === 1).map(s => ({ x: s.social_media_hours, y: s.gaming_hours }));
+        
+        if (charts.correlation) {
+            charts.correlation.data.datasets[0].data = lowRiskPoints;
+            charts.correlation.data.datasets[1].data = highRiskPoints;
+            charts.correlation.update();
+        } else {
+            charts.correlation = new Chart(canvas, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Low Risk', data: lowRiskPoints, backgroundColor: '#28a745', pointRadius: 6 },
+                        { label: 'High Risk', data: highRiskPoints, backgroundColor: '#dc3545', pointRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Gaming Hours' } }, x: { beginAtZero: true, title: { display: true, text: 'Social Media Hours' } } }, plugins: { tooltip: { callbacks: { label: (ctx) => `Social: ${ctx.parsed.x}h, Gaming: ${ctx.parsed.y}h` } } } }
+            });
+        }
+    }
+}
+
+function updateStats(stats) {
+    const statsContainer = document.getElementById('statsContainer');
+    statsContainer.innerHTML = `
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center">
+                <div class="stat-card-icon mb-2"><i class="fas fa-users"></i></div>
+                <div class="stat-card-value">${stats.total_users}</div>
+                <div class="stat-card-label">Total Predictions</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-card-icon mb-2"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-card-value">${stats.high_risk_percentage}%</div>
+                <div class="stat-card-label">High Risk Users</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-card-icon mb-2"><i class="fas fa-clock"></i></div>
+                <div class="stat-card-value">${stats.avg_screen_time}h</div>
+                <div class="stat-card-label">Avg Screen Time</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-card-icon mb-2"><i class="fas fa-moon"></i></div>
+                <div class="stat-card-value">${stats.avg_sleep}h</div>
+                <div class="stat-card-label">Avg Sleep</div>
+            </div>
+        </div>
+    `;
+}
+
+async function refreshDashboard() {
+    await loadPredictions();
+    await updateAllCharts();
+}
+
+async function initDashboard() {
+    await loadPredictions();
+    await updateAllCharts();
+}
+
+initDashboard();
+setInterval(() => {
+    loadPredictions();
+    updateAllCharts();
+}, 30000);
+</script>
+{% endblock %}
