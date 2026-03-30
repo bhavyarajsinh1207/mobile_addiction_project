@@ -117,87 +117,137 @@
                         {% endif %}
                         
                         <form method="POST" action="{{ url_for('predict') }}" id="predictionForm">
-                            <div class="row">
-                                <!-- Age -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="age" class="form-label fw-semibold">
-                                        <i class="fas fa-calendar-alt text-primary me-1"></i> Age
-                                    </label>
-                                    <input type="number" class="form-control" id="age" name="age" 
-                                           placeholder="Enter your age" min="10" max="80" step="1" required>
-                                    <div class="form-text">Age between 10-80 years</div>
-                                </div>
-                                
-                                <!-- Gender -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="gender" class="form-label fw-semibold">
-                                        <i class="fas fa-venus-mars text-primary me-1"></i> Gender
-                                    </label>
-                                    <select class="form-select" id="gender" name="gender" required>
-                                        <option value="" disabled selected>Select gender</option>
-                                        <option value="0">Female</option>
-                                        <option value="1">Male</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <!-- Screen Time -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="screen_time" class="form-label fw-semibold">
-                                        <i class="fas fa-mobile-alt text-primary me-1"></i> Daily Screen Time (hours)
-                                    </label>
-                                    <input type="number" class="form-control" id="screen_time" name="screen_time" 
-                                           placeholder="e.g., 6.5" step="0.1" min="0" max="24" required>
-                                    <div class="form-text">Hours spent on phone daily (0-24)</div>
-                                </div>
-                                
-                                <!-- Social Media Hours -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="social_media" class="form-label fw-semibold">
-                                        <i class="fab fa-instagram text-primary me-1"></i> Social Media Hours
-                                    </label>
-                                    <input type="number" class="form-control" id="social_media" name="social_media" 
-                                           placeholder="e.g., 3.2" step="0.1" min="0" max="24" required>
-                                    <div class="form-text">Time spent on social media apps daily</div>
+                            <!-- Personal Information Section -->
+                            <div class="mb-4 pb-2 border-bottom">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    Personal Information
+                                </h5>
+                                <div class="row">
+                                    <!-- Full Name -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="full_name" class="form-label fw-semibold">
+                                            <i class="fas fa-user text-primary me-1"></i> Full Name
+                                        </label>
+                                        <input type="text" class="form-control" id="full_name" name="full_name" 
+                                               placeholder="Enter your full name" required>
+                                        <div class="form-text">We'll keep your information private</div>
+                                    </div>
+                                    
+                                    <!-- Email -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label fw-semibold">
+                                            <i class="fas fa-envelope text-primary me-1"></i> Email Address
+                                        </label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               placeholder="Enter your email address" required>
+                                        <div class="form-text">We'll send your assessment results here</div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="row">
-                                <!-- Gaming Hours -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="gaming_hours" class="form-label fw-semibold">
-                                        <i class="fas fa-gamepad text-primary me-1"></i> Gaming Hours
-                                    </label>
-                                    <input type="number" class="form-control" id="gaming_hours" name="gaming_hours" 
-                                           placeholder="e.g., 2.0" step="0.1" min="0" max="24" required>
-                                    <div class="form-text">Time spent on mobile games daily</div>
-                                </div>
-                                
-                                <!-- Sleep Hours -->
-                                <div class="col-md-6 mb-3">
-                                    <label for="sleep_hours" class="form-label fw-semibold">
-                                        <i class="fas fa-moon text-primary me-1"></i> Sleep Hours
-                                    </label>
-                                    <input type="number" class="form-control" id="sleep_hours" name="sleep_hours" 
-                                           placeholder="e.g., 7.0" step="0.1" min="0" max="24" required>
-                                    <div class="form-text">Average sleep per night (0-24 hours)</div>
+                            <!-- Demographic Information -->
+                            <div class="mb-4 pb-2 border-bottom">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-chart-pie me-2"></i>
+                                    Demographic Information
+                                </h5>
+                                <div class="row">
+                                    <!-- Age -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="age" class="form-label fw-semibold">
+                                            <i class="fas fa-calendar-alt text-primary me-1"></i> Age
+                                        </label>
+                                        <input type="number" class="form-control" id="age" name="age" 
+                                               placeholder="Enter your age" min="10" max="80" step="1" required>
+                                        <div class="form-text">Age between 10-80 years</div>
+                                    </div>
+                                    
+                                    <!-- Gender -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="gender" class="form-label fw-semibold">
+                                            <i class="fas fa-venus-mars text-primary me-1"></i> Gender
+                                        </label>
+                                        <select class="form-select" id="gender" name="gender" required>
+                                            <option value="" disabled selected>Select gender</option>
+                                            <option value="0">Female</option>
+                                            <option value="1">Male</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Stress Level -->
+                            <!-- Usage Patterns -->
+                            <div class="mb-4 pb-2 border-bottom">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-mobile-alt me-2"></i>
+                                    Mobile Usage Patterns
+                                </h5>
+                                <div class="row">
+                                    <!-- Screen Time -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="screen_time" class="form-label fw-semibold">
+                                            <i class="fas fa-mobile-alt text-primary me-1"></i> Daily Screen Time (hours)
+                                        </label>
+                                        <input type="number" class="form-control" id="screen_time" name="screen_time" 
+                                               placeholder="e.g., 6.5" step="0.1" min="0" max="24" required>
+                                        <div class="form-text">Hours spent on phone daily (0-24)</div>
+                                    </div>
+                                    
+                                    <!-- Social Media Hours -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="social_media" class="form-label fw-semibold">
+                                            <i class="fab fa-instagram text-primary me-1"></i> Social Media Hours
+                                        </label>
+                                        <input type="number" class="form-control" id="social_media" name="social_media" 
+                                               placeholder="e.g., 3.2" step="0.1" min="0" max="24" required>
+                                        <div class="form-text">Time spent on social media apps daily</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <!-- Gaming Hours -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="gaming_hours" class="form-label fw-semibold">
+                                            <i class="fas fa-gamepad text-primary me-1"></i> Gaming Hours
+                                        </label>
+                                        <input type="number" class="form-control" id="gaming_hours" name="gaming_hours" 
+                                               placeholder="e.g., 2.0" step="0.1" min="0" max="24" required>
+                                        <div class="form-text">Time spent on mobile games daily</div>
+                                    </div>
+                                    
+                                    <!-- Sleep Hours -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="sleep_hours" class="form-label fw-semibold">
+                                            <i class="fas fa-moon text-primary me-1"></i> Sleep Hours
+                                        </label>
+                                        <input type="number" class="form-control" id="sleep_hours" name="sleep_hours" 
+                                               placeholder="e.g., 7.0" step="0.1" min="0" max="24" required>
+                                        <div class="form-text">Average sleep per night (0-24 hours)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Well-being Assessment -->
                             <div class="mb-4">
-                                <label for="stress_level" class="form-label fw-semibold">
-                                    <i class="fas fa-heartbeat text-primary me-1"></i> Stress Level (1-10)
-                                </label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <span class="small">Low Stress</span>
-                                    <input type="range" class="form-range flex-grow-1" id="stress_level" 
-                                           name="stress_level" min="1" max="10" step="1" value="5" required>
-                                    <span class="small">High Stress</span>
-                                </div>
-                                <div class="text-center mt-2">
-                                    <span id="stressValue" class="badge bg-primary">5</span>
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-heartbeat me-2"></i>
+                                    Well-being Assessment
+                                </h5>
+                                <!-- Stress Level -->
+                                <div class="mb-4">
+                                    <label for="stress_level" class="form-label fw-semibold">
+                                        <i class="fas fa-heartbeat text-primary me-1"></i> Stress Level (1-10)
+                                    </label>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <span class="small">Low Stress</span>
+                                        <input type="range" class="form-range flex-grow-1" id="stress_level" 
+                                               name="stress_level" min="1" max="10" step="1" value="5" required>
+                                        <span class="small">High Stress</span>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span id="stressValue" class="badge bg-primary">5</span>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -224,7 +274,7 @@
                 
                 <div class="info-card mt-4 p-3 bg-light rounded text-center">
                     <i class="fas fa-shield-alt text-primary me-2"></i>
-                    <small class="text-secondary">Your data is processed securely and will be added to our dashboard to help improve predictions.</small>
+                    <small class="text-secondary">Your data is processed securely and will be added to our dashboard to help improve predictions. We respect your privacy and never share personal information.</small>
                 </div>
             </div>
         </div>
@@ -361,7 +411,25 @@
         e.preventDefault();
         
         const formData = new FormData(originalForm);
+        
+        // Validate email format
+        const email = formData.get('email');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Please enter a valid email address!');
+            return;
+        }
+        
+        // Validate name is not empty
+        const fullName = formData.get('full_name');
+        if (!fullName || fullName.trim() === '') {
+            alert('Please enter your full name!');
+            return;
+        }
+        
         const userData = {
+            full_name: fullName.trim(),
+            email: email,
             age: parseFloat(formData.get('age')),
             gender: parseInt(formData.get('gender')),
             screen_time_hours: parseFloat(formData.get('screen_time')),
@@ -407,6 +475,9 @@
         resetBtn.addEventListener('click', function() {
             setTimeout(() => {
                 updateLiveInsights();
+                // Clear name and email fields on reset
+                document.getElementById('full_name').value = '';
+                document.getElementById('email').value = '';
             }, 100);
         });
     }
