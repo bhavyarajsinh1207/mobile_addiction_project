@@ -33,6 +33,10 @@
     font-size: 2rem;
     font-weight: bold;
 }
+.stat-card-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
 
 /* Data Analysis Section Styles */
 .analysis-card {
@@ -136,6 +140,12 @@
     font-size: 0.75rem;
     margin-left: 5px;
 }
+.text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 </style>
 {% endblock %}
 
@@ -148,7 +158,7 @@
                 Analytics Dashboard
             </h1>
             <p class="lead text-secondary">
-                Real-time insights from user predictions | <span id="dataCount"></span> predictions analyzed
+                Real-time insights from user predictions | <span id="dataCount">0</span> predictions analyzed
             </p>
         </div>
         
@@ -158,6 +168,11 @@
             {{ error }}
         </div>
         {% else %}
+        
+        <!-- Summary Stats with Real-time Updates -->
+        <div class="row g-4 mb-5" id="statsContainer">
+            <!-- Stats will be dynamically updated -->
+        </div>
         
         <!-- Prediction Insights Section -->
         <div class="analysis-card">
@@ -207,11 +222,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Summary Stats with Real-time Updates -->
-        <div class="row g-4 mb-5" id="statsContainer">
-            <!-- Stats will be dynamically updated -->
         </div>
         
         <!-- Charts Grid with All Charts -->
@@ -366,6 +376,7 @@
     </div>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // Global chart instances
 let charts = {};
@@ -402,20 +413,19 @@ async function loadPredictions() {
         
         const predictionsList = document.getElementById('predictionsList');
         
-        if (data.success && data.submissions.length > 0) {
+        if (data.success && data.submissions && data.submissions.length > 0) {
             let html = `
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>Name</th>
                             <th>Age</th>
                             <th>Gender</th>
                             <th>Screen Time</th>
                             <th>Sleep</th>
                             <th>Risk Level</th>
-                            <th>Predicted</th>
-                        </tr>
-                    </thead>
+                            <th>Date</th>
+                        </thead>
                     <tbody>
             `;
             
@@ -424,23 +434,26 @@ async function loadPredictions() {
                     '<span class="badge badge-danger">High Risk</span>' : 
                     '<span class="badge badge-success">Low Risk</span>';
                 const gender = sub.gender == 1 ? 'Male' : 'Female';
+                const name = sub.full_name || 'Anonymous';
+                const email = sub.email || '';
                 
                 html += `
                     <tr>
-                        <td>#${sub.id}</td>
+                        <td title="${email}">${name.length > 20 ? name.substring(0, 20) + '...' : name}</td>
                         <td>${sub.age}</td>
                         <td>${gender}</td>
                         <td>${sub.screen_time_hours}h</td>
                         <td>${sub.sleep_hours}h</td>
                         <td>${riskLevel}</td>
-                        <td><small>${sub.submitted_at.split(' ')[0]}</small></td>
+                        <td><small>${sub.submitted_at ? sub.submitted_at.split(' ')[0] : 'N/A'}</small></td>
                     </tr>
                 `;
             });
             
-            html += `</tbody></table>`;
+            html += `</tbody> </table>`;
             predictionsList.innerHTML = html;
             document.getElementById('totalPredictions').textContent = data.total;
+            document.getElementById('dataCount').innerHTML = `<strong>${data.total}</strong>`;
             
             // Update key metrics
             updateKeyMetrics(data.submissions);
@@ -457,6 +470,7 @@ async function loadPredictions() {
                 </div>
             `;
             document.getElementById('totalPredictions').textContent = '0';
+            document.getElementById('dataCount').innerHTML = '<strong>0</strong>';
             document.getElementById('keyMetricsContent').innerHTML = `
                 <div class="text-center py-4">
                     <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
@@ -571,13 +585,15 @@ function updateWeeklyTrend(submissions) {
     const dayData = {};
     
     submissions.forEach(sub => {
-        const date = new Date(sub.submitted_at);
-        const dayName = days[date.getDay()];
-        if (!dayData[dayName]) {
-            dayData[dayName] = { total: 0, highRisk: 0 };
+        if (sub.submitted_at) {
+            const date = new Date(sub.submitted_at);
+            const dayName = days[date.getDay()];
+            if (!dayData[dayName]) {
+                dayData[dayName] = { total: 0, highRisk: 0 };
+            }
+            dayData[dayName].total++;
+            if (sub.addiction_risk === 1) dayData[dayName].highRisk++;
         }
-        dayData[dayName].total++;
-        if (sub.addiction_risk === 1) dayData[dayName].highRisk++;
     });
     
     let html = '<div class="row">';
@@ -612,6 +628,11 @@ function updateRiskFactorAnalysis(submissions) {
     
     const highRiskUsers = submissions.filter(s => s.addiction_risk === 1);
     const lowRiskUsers = submissions.filter(s => s.addiction_risk === 0);
+    
+    if (highRiskUsers.length === 0 || lowRiskUsers.length === 0) {
+        document.getElementById('riskFactorAnalysis').innerHTML = '<p class="text-muted">Insufficient data for comparison</p>';
+        return;
+    }
     
     const factors = [
         { name: 'High Screen Time (>6h)', high: highRiskUsers.filter(u => u.screen_time_hours > 6).length / highRiskUsers.length * 100,
@@ -655,7 +676,6 @@ async function updateAllCharts() {
         
         // Update stats
         updateStats(data.stats);
-        document.getElementById('dataCount').innerHTML = `<strong>${data.stats.total_users}</strong>`;
         
         // Get submissions for detailed charts
         const submissionsResponse = await fetch('/api/get-submissions');
@@ -663,16 +683,18 @@ async function updateAllCharts() {
         const submissions = submissionsData.submissions || [];
         
         // Update all charts
-        updateRiskChart(data.risk_distribution);
-        updateScreenTimeChart(data.screen_distribution);
-        updateSleepChart(data.sleep_vs_addiction);
-        updateSocialChart(data.social_by_risk);
-        updateGamingChart(data.gaming_by_risk);
-        updateGenderChart(data.gender_counts);
-        updateAgeChart(submissions);
-        updateStressChart(submissions);
-        updateScreenVsRiskChart(submissions);
-        updateCorrelationChart(submissions);
+        if (data.risk_distribution) updateRiskChart(data.risk_distribution);
+        if (data.screen_distribution) updateScreenTimeChart(data.screen_distribution);
+        if (data.sleep_vs_addiction) updateSleepChart(data.sleep_vs_addiction);
+        if (data.social_by_risk) updateSocialChart(data.social_by_risk);
+        if (data.gaming_by_risk) updateGamingChart(data.gaming_by_risk);
+        if (data.gender_counts) updateGenderChart(data.gender_counts);
+        if (submissions.length > 0) {
+            updateAgeChart(submissions);
+            updateStressChart(submissions);
+            updateScreenVsRiskChart(submissions);
+            updateCorrelationChart(submissions);
+        }
         
     } catch (error) {
         console.error('Error updating charts:', error);
@@ -684,14 +706,14 @@ function updateRiskChart(distribution) {
     const canvas = document.getElementById('riskChart');
     if (canvas) {
         if (charts.risk) {
-            charts.risk.data.datasets[0].data = [distribution.low_risk, distribution.high_risk];
+            charts.risk.data.datasets[0].data = [distribution.low_risk || 0, distribution.high_risk || 0];
             charts.risk.update();
         } else {
             charts.risk = new Chart(canvas, {
                 type: 'doughnut',
                 data: {
                     labels: ['Low Risk', 'High Risk'],
-                    datasets: [{ data: [distribution.low_risk, distribution.high_risk], backgroundColor: ['#28a745', '#dc3545'], borderWidth: 0 }]
+                    datasets: [{ data: [distribution.low_risk || 0, distribution.high_risk || 0], backgroundColor: ['#28a745', '#dc3545'], borderWidth: 0 }]
                 },
                 options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
             });
@@ -808,7 +830,7 @@ function updateAgeChart(submissions) {
             else if (sub.age <= 30) ageGroups['21-30']++;
             else if (sub.age <= 40) ageGroups['31-40']++;
             else if (sub.age <= 50) ageGroups['41-50']++;
-            else ageGroups['51+']++;
+            else if (sub.age > 50) ageGroups['51+']++;
         });
         
         if (charts.age) {
@@ -856,9 +878,6 @@ function updateStressChart(submissions) {
 function updateScreenVsRiskChart(submissions) {
     const canvas = document.getElementById('screenVsRiskChart');
     if (canvas && submissions.length > 0) {
-        const lowRiskData = submissions.filter(s => s.addiction_risk === 0).map(s => s.screen_time_hours);
-        const highRiskData = submissions.filter(s => s.addiction_risk === 1).map(s => s.screen_time_hours);
-        
         const screenGroups = ['0-2h', '2-4h', '4-6h', '6-8h', '8-10h', '10h+'];
         const lowRiskCounts = [0, 0, 0, 0, 0, 0];
         const highRiskCounts = [0, 0, 0, 0, 0, 0];
@@ -923,32 +942,34 @@ function updateCorrelationChart(submissions) {
 
 function updateStats(stats) {
     const statsContainer = document.getElementById('statsContainer');
+    if (!stats) return;
+    
     statsContainer.innerHTML = `
         <div class="col-md-3 col-6">
             <div class="stat-card text-center">
                 <div class="stat-card-icon mb-2"><i class="fas fa-users"></i></div>
-                <div class="stat-card-value">${stats.total_users}</div>
+                <div class="stat-card-value">${stats.total_users || 0}</div>
                 <div class="stat-card-label">Total Predictions</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
             <div class="stat-card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <div class="stat-card-icon mb-2"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-card-value">${stats.high_risk_percentage}%</div>
+                <div class="stat-card-value">${stats.high_risk_percentage || 0}%</div>
                 <div class="stat-card-label">High Risk Users</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
             <div class="stat-card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                 <div class="stat-card-icon mb-2"><i class="fas fa-clock"></i></div>
-                <div class="stat-card-value">${stats.avg_screen_time}h</div>
+                <div class="stat-card-value">${stats.avg_screen_time || 0}h</div>
                 <div class="stat-card-label">Avg Screen Time</div>
             </div>
         </div>
         <div class="col-md-3 col-6">
             <div class="stat-card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                 <div class="stat-card-icon mb-2"><i class="fas fa-moon"></i></div>
-                <div class="stat-card-value">${stats.avg_sleep}h</div>
+                <div class="stat-card-value">${stats.avg_sleep || 0}h</div>
                 <div class="stat-card-label">Avg Sleep</div>
             </div>
         </div>
@@ -965,7 +986,10 @@ async function initDashboard() {
     await updateAllCharts();
 }
 
-initDashboard();
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', initDashboard);
+
+// Auto-refresh every 30 seconds
 setInterval(() => {
     loadPredictions();
     updateAllCharts();
